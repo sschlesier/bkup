@@ -114,6 +114,58 @@ init_repo() {
     fi
 }
 
+setup_service() {
+    local plist_dir="$HOME/Library/LaunchAgents"
+    local plist="$plist_dir/com.sschlesier.bkup.plist"
+    local log="$HOME/Library/Logs/bkup.log"
+
+    if [[ -f "$plist" ]]; then
+        prompt_overwrite "$plist" || return 0
+    fi
+
+    local bkup_path
+    if ! bkup_path="$(command -v bkup 2>/dev/null)"; then
+        echo "Error: bkup not found in PATH; skipping service install." >&2
+        return 0
+    fi
+
+    mkdir -p "$plist_dir"
+
+    cat > "$plist" <<EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.sschlesier.bkup</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>$bkup_path</string>
+    </array>
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Hour</key>
+        <integer>2</integer>
+        <key>Minute</key>
+        <integer>33</integer>
+    </dict>
+    <key>WakeSystem</key>
+    <true/>
+    <key>StandardOutPath</key>
+    <string>$log</string>
+    <key>StandardErrorPath</key>
+    <string>$log</string>
+</dict>
+</plist>
+EOF
+
+    local uid
+    uid="$(id -u)"
+    launchctl bootout "gui/$uid" "$plist" 2>/dev/null || true
+    launchctl bootstrap "gui/$uid" "$plist"
+    echo "Service installed and loaded: $plist" >&2
+}
+
 main() {
     echo "bkup setup" >&2
     echo "==========" >&2
@@ -122,12 +174,10 @@ main() {
     setup_env
     setup_dirs
     init_repo
+    setup_service
 
     echo >&2
     echo "Setup complete!" >&2
-    echo >&2
-    echo "To start backups automatically, run:" >&2
-    echo "  brew services start bkup" >&2
 }
 
 main "$@"
