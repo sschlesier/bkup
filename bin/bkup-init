@@ -1,0 +1,133 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+if [[ "${TRACE-0}" == "1" ]]; then
+    set -o xtrace
+fi
+
+CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/bkup"
+ENV_FILE="$CONFIG_DIR/env"
+DIRS_FILE="$CONFIG_DIR/dirs"
+
+prompt_overwrite() {
+    local file="$1"
+    echo "$file already exists." >&2
+    printf "Overwrite? [y/N] " >&2
+    local answer
+    read -r answer
+    [[ "$answer" =~ ^[Yy]$ ]]
+}
+
+setup_env() {
+    if [[ -f "$ENV_FILE" ]]; then
+        prompt_overwrite "$ENV_FILE" || return 0
+    fi
+
+    echo >&2
+    echo "Enter your restic/Backblaze B2 credentials:" >&2
+    echo >&2
+
+    local repo password key secret
+    printf "RESTIC_REPOSITORY (e.g. s3:s3.us-west-004.backblazeb2.com/bucket-name): " >&2
+    read -r repo
+    printf "RESTIC_PASSWORD: " >&2
+    read -rs password
+    echo >&2
+    printf "AWS_ACCESS_KEY_ID: " >&2
+    read -r key
+    printf "AWS_SECRET_ACCESS_KEY: " >&2
+    read -rs secret
+    echo >&2
+
+    cat > "$ENV_FILE" <<EOF
+RESTIC_REPOSITORY=$repo
+RESTIC_PASSWORD=$password
+AWS_ACCESS_KEY_ID=$key
+AWS_SECRET_ACCESS_KEY=$secret
+EOF
+    chmod 600 "$ENV_FILE"
+    echo "Credentials written to $ENV_FILE" >&2
+}
+
+setup_dirs() {
+    if [[ -f "$DIRS_FILE" ]]; then
+        prompt_overwrite "$DIRS_FILE" || return 0
+    fi
+
+    echo >&2
+    echo "Enter directories to back up (one per line, blank line to finish):" >&2
+
+    local dirs=()
+    local dir
+    while true; do
+        printf "> " >&2
+        read -r dir
+        [[ -z "$dir" ]] && break
+        dirs+=("$dir")
+    done
+
+    if [[ ${#dirs[@]} -eq 0 ]]; then
+        echo "No directories entered; skipping." >&2
+        return 0
+    fi
+
+    printf '%s\n' "${dirs[@]}" > "$DIRS_FILE"
+    echo "Directories written to $DIRS_FILE" >&2
+}
+
+init_repo() {
+    if [[ ! -f "$ENV_FILE" ]]; then
+        echo "No env file found at $ENV_FILE; skipping restic init." >&2
+        return 0
+    fi
+
+    echo >&2
+    printf "Initialize the restic repository now? [y/N] " >&2
+    local answer
+    read -r answer
+    if [[ "$answer" =~ ^[Yy]$ ]]; then
+        local restic_path
+        if restic_path="$(command -v restic 2>/dev/null)"; then
+            :
+        else
+            for prefix in /opt/homebrew /usr/local /home/linuxbrew/.linuxbrew; do
+                if [[ -x "${prefix}/bin/restic" ]]; then
+                    restic_path="${prefix}/bin/restic"
+                    break
+                fi
+            done
+        fi
+
+        if [[ -z "${restic_path:-}" ]]; then
+            echo "Error: restic not found; skipping init." >&2
+            return 0
+        fi
+
+        set -a
+        # shellcheck source=/dev/null
+        source "$ENV_FILE"
+        set +a
+
+        "$restic_path" init
+        echo "Repository initialized." >&2
+    fi
+}
+
+main() {
+    echo "bkup setup" >&2
+    echo "==========" >&2
+
+    mkdir -p "$CONFIG_DIR"
+    setup_env
+    setup_dirs
+    init_repo
+
+    echo >&2
+    echo "Setup complete!" >&2
+    echo >&2
+    echo "To start backups automatically, run:" >&2
+    echo "  brew services start bkup" >&2
+}
+
+main "$@"
