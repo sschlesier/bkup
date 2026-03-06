@@ -1,5 +1,5 @@
 ---
-allowed-tools: Bash(git *), Bash(gh *), Bash(curl *), Bash(shasum *), Bash(date *), Bash(rm *), Read, Edit, Write, AskUserQuestion
+allowed-tools: Bash(git *), Bash(gh *), Bash(curl *), Bash(shasum *), Bash(date *), Bash(rm *), Read, Edit, Write, AskUserQuestion, Read(/Users/scotts/src/homebrew-tap/**), Edit(/Users/scotts/src/homebrew-tap/**), Write(/Users/scotts/src/homebrew-tap/**)
 ---
 
 # Release bkup
