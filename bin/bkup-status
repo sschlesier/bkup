@@ -8,14 +8,15 @@ fi
 
 if [[ "${1-}" =~ ^-*h(elp)?$ ]]; then
     cat <<'EOF'
-Usage: bkup-status [warn_days]
+Usage: bkup-status [-v] [warn_days]
 
 Check the status of backups created by the bkup script.
 
 By default, warns if the latest backup for this machine is older than 2 days.
 
 Arguments:
-  warn_days   Number of days after which a backup is considered stale (default: 2).
+  -v, --verbose   List all snapshots from newest to oldest.
+  warn_days       Number of days after which a backup is considered stale (default: 2).
 
 Environment:
   Uses the same environment as bkup:
@@ -30,6 +31,15 @@ Environment:
 EOF
     exit 0
 fi
+
+verbose=0
+args=()
+for arg in "$@"; do
+    case "$arg" in
+        -v|--verbose) verbose=1 ;;
+        *) args+=("$arg") ;;
+    esac
+done
 
 # Load environment variables from file if present (same logic as bkup)
 env_file="${BKUP_ENV_FILE:-${XDG_CONFIG_HOME:-$HOME/.config}/bkup/env}"
@@ -144,6 +154,12 @@ main() {
     echo "  Age of latest snapshot: ${age_days:-(could not determine)}${age_days:+d}"
     echo "  Warning threshold:      ${warn_days}d"
     echo "  Status:                 $status"
+
+    if [[ "$verbose" -eq 1 ]]; then
+        echo
+        echo "All snapshots for host '$computer' (newest to oldest):"
+        jq -r 'reverse[] | "  " + .short_id + "  " + (.time | split(".")[0] | gsub("T"; " ")) + "  " + (.paths | join(", "))' <<<"$snapshots_json"
+    fi
 }
 
-main "$@"
+main "${args[@]+"${args[@]}"}"
