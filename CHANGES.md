@@ -1,8 +1,12 @@
 # Changelog
 
+## v1.1.0 (2026-03-06)
+
+- Add `-v`/`--verbose` flag to `bkup-status` to list all snapshots
+
 ## v1.0.1
 
-- Added `-v`/`--verbose` flag to `bkup-status` to list all snapshots
+- Use `WakeSystem` in launchd plist instead of brew services
 
 ## v1.0.0
 
