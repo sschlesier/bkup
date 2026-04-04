@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.2.0 (2026-04-04)
+
+- Add `bkup logs` subcommand to list launchd log file paths (newest first)
+- Split launchd stdout/stderr into separate log files
+
 ## v1.1.0 (2026-03-06)
 
 - Add `-v`/`--verbose` flag to `bkup-status` to list all snapshots
