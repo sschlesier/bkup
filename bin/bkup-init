@@ -117,7 +117,8 @@ init_repo() {
 setup_service() {
     local plist_dir="$HOME/Library/LaunchAgents"
     local plist="$plist_dir/com.sschlesier.bkup.plist"
-    local log="$HOME/Library/Logs/bkup.log"
+    local log_out="$HOME/Library/Logs/bkup.log"
+    local log_err="$HOME/Library/Logs/bkup.err.log"
 
     if [[ -f "$plist" ]]; then
         prompt_overwrite "$plist" || return 0
@@ -152,9 +153,9 @@ setup_service() {
     <key>WakeSystem</key>
     <true/>
     <key>StandardOutPath</key>
-    <string>$log</string>
+    <string>$log_out</string>
     <key>StandardErrorPath</key>
-    <string>$log</string>
+    <string>$log_err</string>
 </dict>
 </plist>
 EOF

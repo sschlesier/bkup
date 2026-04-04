@@ -7,7 +7,7 @@ if [[ "${TRACE-0}" == "1" ]]; then
 fi
 
 if [[ "${1-}" =~ ^-*h(elp)?$ ]]; then
-    echo 'Usage: bkup [init | dirs_file]
+    echo 'Usage: bkup [init | logs | dirs_file]
 
 Backup directories listed in dirs_file to a restic repository on Backblaze B2.
 Each directory should be on its own line in the file.
@@ -16,6 +16,7 @@ If dirs_file is not specified, defaults to ~/.config/bkup/dirs
 
 Subcommands:
     init    Interactively set up per-machine configuration
+    logs    Print paths to bkup log files (newest first); optional: -n N
 
 Required environment variables:
     RESTIC_REPOSITORY   - B2 repo URI (e.g. s3:s3.region.backblazeb2.com/bucket-name)
@@ -36,6 +37,10 @@ fi
 
 if [[ "${1-}" == "init" ]]; then
     exec "$(dirname "$0")/bkup-init" "${@:2}"
+fi
+
+if [[ "${1-}" == "logs" ]]; then
+    exec "$(dirname "$0")/bkup-logs" "${@:2}"
 fi
 
 # Load environment variables from file if present
@@ -132,6 +137,7 @@ main() {
 
     # Retention policy: 40 daily, 8 weekly, 12 monthly, 3 yearly
     "$restic_path" forget \
+        --verbose \
         --keep-daily 40 \
         --keep-weekly 8 \
         --keep-monthly 12 \

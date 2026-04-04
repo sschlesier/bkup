@@ -4,11 +4,12 @@ Personal macOS backup tool. Backs up directories to a restic repository on Backb
 
 ## Architecture
 
-Three bash scripts in `bin/`, no build system:
+Four bash scripts in `bin/`, no build system:
 
 - `bin/bkup` — main backup script; loads env, validates config, runs `restic backup` then `restic forget --prune`
 - `bin/bkup-init` — interactive setup wizard; writes `~/.config/bkup/env` and `~/.config/bkup/dirs`, installs the launchd plist
 - `bin/bkup-status` — queries restic snapshots via JSON and reports age/staleness for this machine
+- `bin/bkup-logs` — lists paths to launchd log files (newest first); invoked as `bkup logs`
 
 ## Configuration
 
@@ -21,7 +22,7 @@ Override paths via `$BKUP_ENV_FILE` and `$BKUP_DIRS_FILE`.
 
 ## Scheduling
 
-`bkup-init` writes `~/Library/LaunchAgents/com.sschlesier.bkup.plist` and loads it with `launchctl bootstrap`. Runs at 02:33 daily; uses `WakeSystem` to wake from sleep. Logs to `~/Library/Logs/bkup.log`.
+`bkup-init` writes `~/Library/LaunchAgents/com.sschlesier.bkup.plist` and loads it with `launchctl bootstrap`. Runs at 02:33 daily; uses `WakeSystem` to wake from sleep. Stdout → `~/Library/Logs/bkup.log`, stderr → `~/Library/Logs/bkup.err.log`.
 
 ## Shell conventions
 
@@ -38,6 +39,7 @@ All scripts use:
 bkup               # run backup (uses ~/.config/bkup/dirs)
 bkup /path/to/dirs # run backup with explicit dirs file
 bkup init          # interactive setup
+bkup logs          # print log paths (newest first); optional: -n N
 bkup-status        # check backup freshness (warns if >2 days old)
 bkup-status 7      # custom staleness threshold in days
 TRACE=1 bkup       # debug with xtrace

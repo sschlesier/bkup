@@ -1,0 +1,155 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+if [[ "${TRACE-0}" == "1" ]]; then
+    set -o xtrace
+fi
+
+usage() {
+    cat <<'EOF'
+Usage: bkup-logs [-n N | --limit N]
+
+Print paths to bkup launchd log files, newest first (one path per line).
+Useful for tail, less, or opening in an editor.
+
+Paths come from StandardOutPath and StandardErrorPath in
+  ~/Library/LaunchAgents/com.sschlesier.bkup.plist
+when that file exists (duplicate paths are listed once). Otherwise defaults
+to ~/Library/Logs/bkup.log and ~/Library/Logs/bkup.err.log.
+Rotated siblings in the same directory are included (e.g. bkup.log.0).
+
+Options:
+  -n, --limit N   Print at most N paths (newest first).
+  -h, --help      Show this help.
+EOF
+}
+
+if [[ "${1-}" =~ ^-*h(elp)?$ ]]; then
+    usage
+    exit 0
+fi
+
+limit=""
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        -n|--limit)
+            if [[ $# -lt 2 ]] || ! [[ "$2" =~ ^[0-9]+$ ]]; then
+                echo "Error: $1 requires a positive integer." >&2
+                exit 1
+            fi
+            limit="$2"
+            shift 2
+            ;;
+        --limit=*)
+            val="${1#*=}"
+            if ! [[ "$val" =~ ^[0-9]+$ ]]; then
+                echo "Error: --limit requires a positive integer." >&2
+                exit 1
+            fi
+            limit="$val"
+            shift
+            ;;
+        *)
+            echo "Error: unknown argument: $1" >&2
+            usage >&2
+            exit 1
+            ;;
+    esac
+done
+
+plist_buddy() {
+    local plist=$1
+    local key=$2
+    /usr/libexec/PlistBuddy -c "Print :$key" "$plist" 2>/dev/null || true
+}
+
+# Populated by resolve_bases (global so add_base/resolve_bases see the same array).
+bases=()
+
+# Append path to bases if non-empty and not already present.
+add_base() {
+    local p=$1
+    [[ -z "$p" ]] && return
+    local b
+    for b in "${bases[@]}"; do
+        [[ "$b" == "$p" ]] && return
+    done
+    bases+=("$p")
+}
+
+resolve_bases() {
+    bases=()
+    local plist="$HOME/Library/LaunchAgents/com.sschlesier.bkup.plist"
+    if [[ -f "$plist" ]]; then
+        add_base "$(plist_buddy "$plist" StandardOutPath)"
+        add_base "$(plist_buddy "$plist" StandardErrorPath)"
+    fi
+    if [[ ${#bases[@]} -eq 0 ]]; then
+        add_base "$HOME/Library/Logs/bkup.log"
+        add_base "$HOME/Library/Logs/bkup.err.log"
+    fi
+}
+
+matches_contains() {
+    local needle=$1
+    local m
+    for m in "${matches[@]}"; do
+        [[ "$m" == "$needle" ]] && return 0
+    done
+    return 1
+}
+
+# Add all regular files for one log base path (exact name + stem.* rotations).
+glob_base() {
+    local base=$1
+    local dir stem
+    dir="$(dirname "$base")"
+    stem="$(basename "$base")"
+    shopt -s nullglob
+    local f
+    for f in "$dir/$stem" "$dir/$stem".*; do
+        if [[ -f "$f" ]] && ! matches_contains "$f"; then
+            matches+=("$f")
+        fi
+    done
+    shopt -u nullglob
+}
+
+main() {
+    local -a matches=()
+
+    resolve_bases
+    local base
+    for base in "${bases[@]}"; do
+        glob_base "$base"
+    done
+
+    if [[ ${#matches[@]} -eq 0 ]]; then
+        return 0
+    fi
+
+    local line
+    local -a sorted=()
+    while IFS= read -r line || [[ -n "$line" ]]; do
+        [[ -n "$line" ]] && sorted+=("$line")
+    done < <(
+        for f in "${matches[@]}"; do
+            m="$(stat -f '%m' "$f" 2>/dev/null)" || continue
+            printf '%s\t%s\n' "$m" "$f"
+        done | sort -t $'\t' -k1,1nr | cut -f2-
+    )
+
+    if [[ -n "$limit" ]]; then
+        local i=0
+        for f in "${sorted[@]}"; do
+            ((i++)) || true
+            printf '%s\n' "$f"
+            [[ "$i" -eq "$limit" ]] && break
+        done
+    else
+        printf '%s\n' "${sorted[@]}"
+    fi
+}
+
+main "$@"

@@ -14,6 +14,7 @@ scheduled via a launchd plist that wakes the machine from sleep.
 | `bkup` | Run a restic backup using credentials and dirs from `~/.config/bkup/` |
 | `bkup-init` | Interactive setup wizard — configures credentials, directories, and installs the launchd service |
 | `bkup-status` | Show the status of recent snapshots |
+| `bkup-logs` | List paths to backup log files (newest first); also available as `bkup logs` |
 
 ## Installation
 
@@ -33,7 +34,8 @@ Per-machine config lives in `~/.config/bkup/`:
 
 `bkup init` writes `~/Library/LaunchAgents/com.sschlesier.bkup.plist` and
 loads it via `launchctl`. The job runs at 02:33 daily and uses `WakeSystem`
-to wake the machine from sleep if needed.
+to wake the machine from sleep if needed. Launchd logs stdout to
+`~/Library/Logs/bkup.log` and stderr to `~/Library/Logs/bkup.err.log`.
 
 ## License
 
