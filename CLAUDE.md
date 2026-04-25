@@ -18,7 +18,7 @@ Per-machine config in `~/.config/bkup/` (XDG-aware, respects `$XDG_CONFIG_HOME`)
 - `env` — restic + B2 credentials (chmod 600). Variables: `RESTIC_REPOSITORY`, `RESTIC_PASSWORD`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`
 - `dirs` — directories to back up, one per line, `#` comments and blank lines ignored
 
-Override paths via `$BKUP_ENV_FILE` and `$BKUP_DIRS_FILE`.
+Override paths via `$BKUP_ENV_FILE` and `$BKUP_DIRS_FILE`. Override the hostname tag via `$BKUP_HOST`.
 
 ## Scheduling
 
@@ -40,9 +40,11 @@ bkup               # run backup (uses ~/.config/bkup/dirs)
 bkup /path/to/dirs # run backup with explicit dirs file
 bkup init          # interactive setup
 bkup logs          # print log paths (newest first); optional: -n N
-bkup-status        # check backup freshness (warns if >2 days old)
-bkup-status 7      # custom staleness threshold in days
-TRACE=1 bkup       # debug with xtrace
+bkup-status                        # check backup freshness (warns if >2 days old)
+bkup-status 7                      # custom staleness threshold in days
+bkup-status --host othermachine    # inspect another machine's backups
+BKUP_HOST=othermachine bkup-status # same, via env var
+TRACE=1 bkup                       # debug with xtrace
 ```
 
 ## Distribution

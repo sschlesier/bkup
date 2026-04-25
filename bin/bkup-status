@@ -8,7 +8,7 @@ fi
 
 if [[ "${1-}" =~ ^-*h(elp)?$ ]]; then
     cat <<'EOF'
-Usage: bkup-status [-v] [warn_days]
+Usage: bkup-status [-v] [--host HOST] [warn_days]
 
 Check the status of backups created by the bkup script.
 
@@ -16,6 +16,7 @@ By default, warns if the latest backup for this machine is older than 2 days.
 
 Arguments:
   -v, --verbose   List all snapshots from newest to oldest.
+  --host HOST     Check status for HOST instead of this machine.
   warn_days       Number of days after which a backup is considered stale (default: 2).
 
 Environment:
@@ -28,15 +29,25 @@ Environment:
   These can be set directly or via an env file at:
     $XDG_CONFIG_HOME/bkup/env
   (or $BKUP_ENV_FILE if set).
+
+  BKUP_HOST       Override the hostname used to filter snapshots (--host takes precedence).
 EOF
     exit 0
 fi
 
 verbose=0
+host_override=""
 args=()
+skip_next=0
 for arg in "$@"; do
+    if [[ "$skip_next" -eq 1 ]]; then
+        host_override="$arg"
+        skip_next=0
+        continue
+    fi
     case "$arg" in
         -v|--verbose) verbose=1 ;;
+        --host) skip_next=1 ;;
         *) args+=("$arg") ;;
     esac
 done
@@ -85,7 +96,7 @@ main() {
     fi
 
     local computer
-    computer=$(hostname | cut -d. -f1)
+    computer="${host_override:-${BKUP_HOST:-$(hostname | cut -d. -f1)}}"
 
     echo "Checking backup status for host: $computer" >&2
 
