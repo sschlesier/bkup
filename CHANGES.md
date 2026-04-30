@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.2.2 (2026-04-29)
+
+- Fixed usage text to correctly display apostrophes
+
 ## v1.2.1 (2026-04-25)
 
 - Add `BKUP_HOST` environment variable to override the hostname used when
