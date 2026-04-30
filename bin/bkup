@@ -7,7 +7,8 @@ if [[ "${TRACE-0}" == "1" ]]; then
 fi
 
 if [[ "${1-}" =~ ^-*h(elp)?$ ]]; then
-    echo 'Usage: bkup [init | logs | dirs_file]
+    cat <<'EOF'
+Usage: bkup [init | logs | dirs_file]
 
 Backup directories listed in dirs_file to a restic repository on Backblaze B2.
 Each directory should be on its own line in the file.
@@ -34,7 +35,7 @@ Example dirs_file contents:
     ~/Documents
     ~/Photos
     ~/Projects
-'
+EOF
     exit
 fi
 
