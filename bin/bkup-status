@@ -8,7 +8,8 @@ fi
 
 if [[ "${1-}" =~ ^-*h(elp)?$ ]]; then
     cat <<'EOF'
-Usage: bkup-status [-v] [--host HOST] [warn_days]
+Usage: bkup status [-v] [--host HOST] [warn_days]
+       bkup-status [-v] [--host HOST] [warn_days]
 
 Check the status of backups created by the bkup script.
 
