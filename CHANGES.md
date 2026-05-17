@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.3.0 (2026-05-17)
+
+- Add `bkup status` subcommand; `bkup-status` remains usable directly
+
 ## v1.2.2 (2026-04-29)
 
 - Fixed usage text to correctly display apostrophes
