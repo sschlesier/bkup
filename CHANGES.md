@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.3.1 (2026-05-29)
+
+- Support profile name as a shorthand for `bkup status`
+
 ## v1.3.0 (2026-05-17)
 
 - Add `bkup status` subcommand; `bkup-status` remains usable directly
