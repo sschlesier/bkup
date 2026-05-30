@@ -81,8 +81,8 @@ if [[ -f "$env_file" ]]; then
     set +a
 fi
 
-# Default host to profile name when no explicit --host was given
-if [[ -z "$host_override" && -n "$profile_name" ]]; then
+# Default host to profile name if neither --host nor BKUP_HOST (from env file) is set
+if [[ -z "$host_override" && -n "$profile_name" && -z "${BKUP_HOST:-}" ]]; then
     host_override="$profile_name"
 fi
 
