@@ -18,7 +18,7 @@ If dirs_file is not specified, defaults to ~/.config/bkup/dirs
 Subcommands:
     init    Interactively set up per-machine configuration
     logs    Print paths to bkup log files (newest first); optional: -n N
-    status  Check backup freshness; optional: [-v] [--host HOST] [warn_days]
+    status  Check backup freshness; optional: [-v] [--host HOST] [profile] [warn_days]
 
 Required environment variables:
     RESTIC_REPOSITORY   - B2 repo URI (e.g. s3:s3.region.backblazeb2.com/bucket-name)
