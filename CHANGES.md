@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.4.0 (2026-10-17)
+
+- Timestamp each run in the logs with started/finished (exit N) markers
+- Rotate launchd logs at 5 MB, keeping .log, .log.1 and .log.2
+
 ## v1.3.1 (2026-05-29)
 
 - Support profile name as a shorthand for `bkup status`
