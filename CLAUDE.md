@@ -22,7 +22,7 @@ Override paths via `$BKUP_ENV_FILE` and `$BKUP_DIRS_FILE`. Override the hostname
 
 ## Scheduling
 
-`bkup-init` writes `~/Library/LaunchAgents/com.sschlesier.bkup.plist` and loads it with `launchctl bootstrap`. Runs at 02:33 daily; uses `WakeSystem` to wake from sleep. Stdout → `~/Library/Logs/bkup.log`, stderr → `~/Library/Logs/bkup.err.log`.
+`bkup-init` writes `~/Library/LaunchAgents/com.sschlesier.bkup.plist` and loads it with `launchctl bootstrap`. Runs at 02:33 daily; uses `WakeSystem` to wake from sleep. Stdout → `~/Library/Logs/bkup.log`, stderr → `~/Library/Logs/bkup.err.log`. Each run writes timestamped `started`/`finished (exit N)` marker lines to both logs, and `bin/bkup` rotates each log at the start of a run once it exceeds 5 MB (keeps `.log`, `.log.1`, `.log.2`).
 
 ## Shell conventions
 

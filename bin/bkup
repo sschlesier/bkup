@@ -60,7 +60,60 @@ if [[ -f "$env_file" ]]; then
     set +a
 fi
 
+LOG_MAX_BYTES=$((5 * 1024 * 1024))
+
+timestamp() {
+    date '+%Y-%m-%dT%H:%M:%S%z'
+}
+
+# Write a timestamped marker line to both the stdout and stderr logs.
+log_marker() {
+    local line
+    line="=== $(timestamp) bkup $*"
+    echo "$line"
+    echo "$line" >&2
+}
+
+log_end() {
+    log_marker "finished (exit $1)"
+}
+
+# Rotate a log once it exceeds LOG_MAX_BYTES, keeping the file plus .1 and .2.
+# Copy then truncate, because launchd holds the file open.
+rotate_log() {
+    local f=$1
+    [[ -f "$f" ]] || return 0
+    local size
+    size="$(wc -c < "$f")"
+    if (( size <= LOG_MAX_BYTES )); then
+        return 0
+    fi
+    if [[ -f "$f.1" ]]; then
+        mv -f "$f.1" "$f.2"
+    fi
+    cp "$f" "$f.1"
+    : > "$f"
+}
+
+# Rotate the launchd log files, located the same way bkup-logs finds them.
+rotate_logs() {
+    local plist="$HOME/Library/LaunchAgents/com.sschlesier.bkup.plist"
+    local out="" err=""
+    if [[ -f "$plist" && -x /usr/libexec/PlistBuddy ]]; then
+        out="$(/usr/libexec/PlistBuddy -c 'Print :StandardOutPath' "$plist" 2>/dev/null || true)"
+        err="$(/usr/libexec/PlistBuddy -c 'Print :StandardErrorPath' "$plist" 2>/dev/null || true)"
+    fi
+    [[ -n "$out" ]] || out="$HOME/Library/Logs/bkup.log"
+    [[ -n "$err" ]] || err="$HOME/Library/Logs/bkup.err.log"
+    rotate_log "$out"
+    [[ "$err" == "$out" ]] || rotate_log "$err"
+}
+
 main() {
+    rotate_logs
+    log_marker "started"
+    trap 'log_end $?' EXIT
+
     # Verify required environment variables
     local required_vars=(RESTIC_REPOSITORY RESTIC_PASSWORD AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY)
     for var in "${required_vars[@]}"; do
